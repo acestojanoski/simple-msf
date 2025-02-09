@@ -5,8 +5,8 @@ import {
 } from '@netlify/functions';
 import {z} from 'zod';
 
-export type IQuerySchema = Record<string, unknown> & z.ZodSchema;
-export type IBodySchema = Record<string, unknown> & z.ZodSchema;
+export type IQuerySchema = z.ZodSchema;
+export type IBodySchema = z.ZodSchema;
 
 export type IRequest<
 	TQuerySchema extends IQuerySchema,
