@@ -1,0 +1,62 @@
+{
+	"name": "netlify-msf",
+	"version": "1.0.0-beta.1",
+	"description": "A lightweight framework for building serverless microservices with Netlify Functions.",
+	"type": "module",
+	"main": "./dist/es/index.js",
+	"scripts": {
+		"build:prepare": "bunchee prepare",
+		"build": "bunchee",
+		"lint": "xo"
+	},
+	"files": [
+		"dist"
+	],
+	"module": "./dist/es/index.js",
+	"types": "./dist/es/index.d.ts",
+	"exports": {
+		".": {
+			"import": {
+				"types": "./dist/es/index.d.ts",
+				"default": "./dist/es/index.js"
+			},
+			"require": {
+				"types": "./dist/cjs/index.d.cts",
+				"default": "./dist/cjs/index.cjs"
+			}
+		}
+	},
+	"bin": {
+		"netlify-msf": "./dist/bin/netlify-msf.js"
+	},
+	"keywords": [
+		"netlify",
+		"functions",
+		"microservices",
+		"framework",
+		"nodejs",
+		"openapi",
+		"docs"
+	],
+	"author": {
+		"name": "Aleksandar Stojanoski",
+		"url": "https://github.com/acestojanoski"
+	},
+	"repository": "acestojanoski/netlify-msf",
+	"license": "MIT",
+	"dependencies": {
+		"@asteasolutions/zod-to-openapi": "^7.3.0",
+		"@netlify/functions": "^3.0.0",
+		"commander": "^13.1.0",
+		"esbuild": "^0.25.0",
+		"js-yaml": "^4.1.0",
+		"zod": "^3.24.1"
+	},
+	"devDependencies": {
+		"@types/js-yaml": "^4.0.9",
+		"@types/node": "^22.13.1",
+		"bunchee": "^6.3.3",
+		"typescript": "^5.7.3",
+		"xo": "^0.60.0"
+	}
+}

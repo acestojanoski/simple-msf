@@ -1,0 +1,7 @@
+{
+	"prettier": true,
+	"rules": {
+		"n/prefer-global/process": "off",
+		"@typescript-eslint/naming-convention": "off"
+	}
+}
