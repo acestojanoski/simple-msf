@@ -36,17 +36,13 @@ Options:
   -h, --help      display help for command
 
 Commands:
-  docs-gen        Generate OpenAPI documentation.
+  openapi-gen     Generate OpenAPI documentation.
   help [command]  display help for command
 ```
 
 ## Configuration
 
 The framework relies on a `netlify-msf.config.ts` file at the root level of your repository to define API endpoints and OpenAPI documentation.
-
-### Registering Endpoints
-
-The `registerEndpoint` utility simplifies endpoint configuration creation.
 
 #### Example:
 
@@ -66,30 +62,31 @@ export default UsersSchema;
 
 ```typescript
 // netlify-msf.config.ts
-import registerEndpoint from 'netlify-msf';
 import { Config } from 'netlify-msf';
 import UsersSchema from './UsersSchema';
 
 const config: Config = {
-  docs: {
-    directoryPath: "./docs",
-    title: "My microservice",
-    description: "Description about my microservice.",
-    version: "1.0.0",
-    schemas: {
-      UsersSchema,
-    },
-    endpoints: {
-      "/users": [
-        registerEndpoint("get", "Get all users", {
-          responses: {
-            200: {
-              description: "Success.",
-              schema: "UsersSchema",
+  schemas: {
+    UsersSchema,
+  },
+  openapi: {
+    definition: {
+      title: "My microservice",
+      description: "Description about my microservice.",
+      version: "1.0.0",
+      paths: {
+        "/users": {
+          get: {
+            summary: "Get all users",
+            responses: {
+              200: {
+                description: "Success.",
+                schema: "UsersSchema",
+              },
             },
           },
-        }),
-      ],
+        },
+      },
     },
   },
 };
@@ -97,10 +94,10 @@ const config: Config = {
 
 ### Generating OpenAPI Documentation
 
-Run the following command to generate an `openapi.yaml` file at the root level or in the specified `directoryPath`:
+Run the following command to generate an `openapi.yaml` file at the root level or in the specified `outputDir`:
 
 ```sh
-netlify-msf docs-gen
+netlify-msf openapi-gen
 ```
 
 ## API Handler
