@@ -2,7 +2,7 @@
 
 import {Command} from 'commander';
 import {version} from '../../package.json';
-import docsGen from '../commands/docs-gen.js';
+import openapiGen from '../commands/openapi-gen.js';
 
 const program = new Command();
 
@@ -14,10 +14,10 @@ program
 	.version(version);
 
 program
-	.command('docs-gen')
+	.command('openapi-gen')
 	.description('Generate OpenAPI documentation.')
 	.action(async () =>
-		docsGen.execute().catch((error: unknown) => {
+		openapiGen.execute().catch((error: unknown) => {
 			console.error(error);
 			process.exit(1);
 		}),

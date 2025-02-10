@@ -10,7 +10,7 @@ import {
 import * as yaml from 'js-yaml';
 import {build} from 'esbuild';
 import {z} from 'zod';
-import {type Config} from '../types.js';
+import {type EndpointMethod, type Config} from '../types.js';
 
 extendZodWithOpenApi(z);
 
@@ -47,61 +47,60 @@ const execute = async () => {
 		throw new Error('Missing default export in "netlify-msf.config.ts" file.');
 	}
 
-	if (!config.docs) {
-		throw new Error('Missing "docs" property in "netlify-msf.config.ts" file.');
+	if (!config.openapi) {
+		throw new Error(
+			'Missing "openapi" property in "netlify-msf.config.ts" file.',
+		);
+	}
+
+	if (!config.openapi.definition) {
+		throw new Error(
+			'Missing "openapi.definition" property in "netlify-msf.config.ts" file.',
+		);
 	}
 
 	console.info('\nGenerating openapi 3.1.0 documentation...');
 
-	const {
-		title,
-		version,
-		endpoints,
-		description,
-		schemas,
-		directoryPath,
-		servers,
-	} = config.docs;
+	const {definition, outputDir} = config.openapi;
+
+	const {title, version, paths, description, schemas, servers} = definition;
 
 	const registry = new OpenAPIRegistry();
-	const registeredSchemas: Record<keyof typeof schemas, z.ZodEffects<any>> = {};
+	const registeredSchemas: Record<keyof typeof schemas, z.ZodTypeAny> = {};
 
 	for (const [referenceId, schema] of Object.entries(schemas)) {
 		schema.openapi ||= z.any().openapi;
 		registeredSchemas[referenceId] = registry.register(referenceId, schema);
 	}
 
-	for (const [path, _endpoints] of Object.entries(endpoints)) {
-		for (const endpoint of _endpoints) {
+	for (const [path, endpoints] of Object.entries(paths)) {
+		for (const [method, endpoint] of Object.entries(endpoints)) {
 			const routeConfig: RouteConfig = {
 				path,
-				method: endpoint.method,
+				method: method as EndpointMethod,
 				summary: endpoint.summary,
 				request: {},
 				responses: {},
 			};
 
-			if (endpoint.config.query && registeredSchemas[endpoint.config.query]) {
-				routeConfig.request!.query = registeredSchemas[endpoint.config.query];
+			if (endpoint.query && registeredSchemas[endpoint.query]) {
+				routeConfig.request!.query = registeredSchemas[
+					endpoint.query
+				] as z.ZodEffects<any>;
 			}
 
-			if (
-				endpoint.config.requestBody &&
-				registeredSchemas[endpoint.config.requestBody]
-			) {
+			if (endpoint.body && registeredSchemas[endpoint.body]) {
 				routeConfig.request!.body = {
 					description: endpoint.summary,
 					content: {
 						'application/json': {
-							schema: registeredSchemas[endpoint.config.requestBody],
+							schema: registeredSchemas[endpoint.body],
 						},
 					},
 				};
 			}
 
-			for (const [status, response] of Object.entries(
-				endpoint.config.responses,
-			)) {
+			for (const [status, response] of Object.entries(endpoint.responses)) {
 				routeConfig.responses[status] = {
 					description: response.description,
 					content: {
@@ -130,8 +129,8 @@ const execute = async () => {
 
 	const fileContent = yaml.dump(openapi);
 
-	const openapiPath = directoryPath
-		? path.join(process.cwd(), directoryPath, fileName)
+	const openapiPath = outputDir
+		? path.join(process.cwd(), outputDir, fileName)
 		: path.join(process.cwd(), fileName);
 
 	await fs.writeFile(openapiPath, fileContent, 'utf8');
@@ -140,8 +139,8 @@ const execute = async () => {
 };
 
 // eslint-disable-next-line unicorn/prevent-abbreviations
-const docsGen = {
+const openapiGen = {
 	execute,
 };
 
-export default docsGen;
+export default openapiGen;
