@@ -20,6 +20,7 @@ export type Endpoint = {
 };
 
 export type Config = {
+	schemas: Record<ReferenceId, z.ZodTypeAny>;
 	openapi: {
 		definition: {
 			title: string;
@@ -29,7 +30,6 @@ export type Config = {
 				url: string;
 				description?: string;
 			}>;
-			schemas: Record<ReferenceId, z.ZodTypeAny>;
 			paths: Record<
 				Path,
 				Partial<Record<EndpointMethod, Endpoint>> // Ensure only valid methods are used

@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import os from 'node:os';
 import {
 	extendZodWithOpenApi,
 	OpenApiGeneratorV31,
@@ -8,43 +7,25 @@ import {
 	type RouteConfig,
 } from '@asteasolutions/zod-to-openapi';
 import * as yaml from 'js-yaml';
-import {build} from 'esbuild';
 import {z} from 'zod';
-import {type EndpointMethod, type Config} from '../types.js';
+import {type EndpointMethod} from '../types.js';
+import loadConfig from '../utils/load-config.js';
 
 extendZodWithOpenApi(z);
 
 const fileName = 'openapi.yaml';
 
-const configPath = path.join(process.cwd(), 'netlify-msf.config.ts');
-
-async function loadConfig() {
-	const transpiledConfigPath = path.join(os.tmpdir(), 'netlify-msf.config.js');
-
-	await build({
-		entryPoints: [configPath],
-		outfile: transpiledConfigPath,
-		bundle: true,
-		platform: 'node',
-		format: 'cjs',
-	});
-
-	return import(transpiledConfigPath).then(
-		(module_) => module_.default as {default?: Config},
-	);
-}
-
 const execute = async () => {
-	try {
-		await fs.access(configPath);
-	} catch {
-		throw new Error('Missing "netlify-msf.config.ts" file.');
-	}
-
 	const config = await loadConfig().then((module_) => module_.default);
 
 	if (!config) {
 		throw new Error('Missing default export in "netlify-msf.config.ts" file.');
+	}
+
+	if (!config.schemas) {
+		throw new Error(
+			'Missing "schemas" property in "netlify-msf.config.ts" file.',
+		);
 	}
 
 	if (!config.openapi) {
@@ -61,9 +42,9 @@ const execute = async () => {
 
 	console.info('\nGenerating openapi 3.1.0 documentation...');
 
+	const {schemas} = config;
 	const {definition, outputDir} = config.openapi;
-
-	const {title, version, paths, description, schemas, servers} = definition;
+	const {title, version, paths, description, servers} = definition;
 
 	const registry = new OpenAPIRegistry();
 	const registeredSchemas: Record<keyof typeof schemas, z.ZodTypeAny> = {};
