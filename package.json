@@ -1,7 +1,7 @@
 {
-	"name": "netlify-msf",
-	"version": "1.0.0-beta.4",
-	"description": "A lightweight framework for building serverless microservices with Netlify Functions.",
+	"name": "simple-msf",
+	"version": "1.0.0-beta.1",
+	"description": "A simple framework for building microservices.",
 	"type": "module",
 	"main": "./dist/es/index.js",
 	"scripts": {
@@ -24,13 +24,24 @@
 				"types": "./dist/cjs/index.d.cts",
 				"default": "./dist/cjs/index.cjs"
 			}
+		},
+		"./netlify": {
+			"import": {
+				"types": "./dist/es/netlify.d.ts",
+				"default": "./dist/es/netlify.js"
+			},
+			"require": {
+				"types": "./dist/cjs/netlify.d.cts",
+				"default": "./dist/cjs/netlify.cjs"
+			}
 		}
 	},
 	"bin": {
-		"netlify-msf": "./dist/bin/netlify-msf.js"
+		"simple-msf": "./dist/bin/simple-msf.js"
 	},
 	"keywords": [
-		"netlify",
+		"simple",
+		"serverless",
 		"functions",
 		"microservices",
 		"framework",
@@ -42,7 +53,7 @@
 		"name": "Aleksandar Stojanoski",
 		"url": "https://github.com/acestojanoski"
 	},
-	"repository": "acestojanoski/netlify-msf",
+	"repository": "acestojanoski/simple-msf",
 	"license": "MIT",
 	"dependencies": {
 		"@asteasolutions/zod-to-openapi": "^7.3.0",

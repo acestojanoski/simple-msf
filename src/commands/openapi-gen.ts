@@ -19,24 +19,24 @@ const execute = async () => {
 	const config = await loadConfig().then((module_) => module_.default);
 
 	if (!config) {
-		throw new Error('Missing default export in "netlify-msf.config.ts" file.');
+		throw new Error('Missing default export in "simple-msf.config.ts" file.');
 	}
 
 	if (!config.schemas) {
 		throw new Error(
-			'Missing "schemas" property in "netlify-msf.config.ts" file.',
+			'Missing "schemas" property in "simple-msf.config.ts" file.',
 		);
 	}
 
 	if (!config.openapi) {
 		throw new Error(
-			'Missing "openapi" property in "netlify-msf.config.ts" file.',
+			'Missing "openapi" property in "simple-msf.config.ts" file.',
 		);
 	}
 
 	if (!config.openapi.definition) {
 		throw new Error(
-			'Missing "openapi.definition" property in "netlify-msf.config.ts" file.',
+			'Missing "openapi.definition" property in "simple-msf.config.ts" file.',
 		);
 	}
 

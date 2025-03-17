@@ -2,6 +2,7 @@ import {
 	type Handler,
 	type HandlerEvent,
 	type HandlerContext,
+	type HandlerResponse,
 } from '@netlify/functions';
 import {z} from 'zod';
 
@@ -23,7 +24,7 @@ export type IExecute<
 	request: IRequest<TQuerySchema, TBodySchema>,
 	event: HandlerEvent,
 	context: HandlerContext,
-) => any;
+) => HandlerResponse | Promise<HandlerResponse>;
 
 export type IHandlerOptions<
 	TQuerySchema extends IQuerySchema,
@@ -31,17 +32,35 @@ export type IHandlerOptions<
 > = {
 	querySchema?: TQuerySchema;
 	bodySchema?: TBodySchema;
+	customErrorHandler?: (
+		error: any,
+	) => HandlerResponse | Promise<HandlerResponse>;
+	loggingEnabled?: boolean;
+	eventLogger?: (event: HandlerEvent) => void;
+	responseLogger?: (response: HandlerResponse) => void;
+	errorLogger?: (error: any) => void;
 };
 
 const handler =
 	<TQuerySchema extends IQuerySchema, TBodySchema extends IBodySchema>({
 		bodySchema,
 		querySchema,
+		customErrorHandler,
+		loggingEnabled = true,
+		errorLogger,
+		eventLogger,
+		responseLogger,
 	}: IHandlerOptions<TQuerySchema, TBodySchema> = {}) =>
 	(execute: IExecute<TQuerySchema, TBodySchema>): Handler => {
 		return async (event, context) => {
 			try {
-				console.log('request', JSON.stringify(event));
+				if (loggingEnabled && !eventLogger) {
+					console.log('event', JSON.stringify(event));
+				}
+
+				if (eventLogger) {
+					eventLogger(event);
+				}
 
 				const request: IRequest<TQuerySchema, TBodySchema> = {
 					query: undefined,
@@ -74,17 +93,29 @@ const handler =
 					request.body = await bodySchema.parseAsync(body);
 				}
 
-				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-				const result = await execute(request, event, context);
+				const response = await execute(request, event, context);
 
-				console.info('result', JSON.stringify(result));
+				if (loggingEnabled && !responseLogger) {
+					console.info('response', JSON.stringify(response));
+				}
 
-				return {
-					statusCode: 200,
-					body: JSON.stringify(result),
-				};
+				if (responseLogger) {
+					responseLogger(response);
+				}
+
+				return response;
 			} catch (error: any) {
-				console.error('error', error);
+				if (customErrorHandler) {
+					return customErrorHandler(error);
+				}
+
+				if (loggingEnabled && !errorLogger) {
+					console.error('error', error);
+				}
+
+				if (errorLogger) {
+					errorLogger(error);
+				}
 
 				if (error instanceof z.ZodError) {
 					return {

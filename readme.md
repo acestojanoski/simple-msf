@@ -1,6 +1,6 @@
-# netlify-msf
+# simple-msf
 
-> A lightweight framework for building serverless microservices with Netlify Functions.
+> A simple framework for building microservices.
 
 ---
 
@@ -12,24 +12,24 @@
 
 ## Installation
 
-You can install `netlify-msf` using npm, yarn, or pnpm:
+You can install `simple-msf` using npm, yarn, or pnpm:
 
 ```sh
-npm install netlify-msf
+npm install simple-msf
 # or
-yarn add netlify-msf
+yarn add simple-msf
 # or
-pnpm add netlify-msf
+pnpm add simple-msf
 ```
 
 ## CLI Usage
 
-`netlify-msf` provides a command-line interface to manage your microservice framework.
+`simple-msf` provides a command-line interface to manage your microservice framework.
 
 ```sh
-Usage: netlify-msf [options] [command]
+Usage: simple-msf [options] [command]
 
-A lightweight framework for building serverless microservices with Netlify Functions.
+A simple framework for building microservices.
 
 Options:
   -V, --version   output the version number
@@ -42,7 +42,7 @@ Commands:
 
 ## Configuration
 
-The framework relies on a `netlify-msf.config.ts` file at the root level of your repository to define API endpoints and OpenAPI documentation.
+The framework relies on a `simple-msf.config.ts` file at the root level of your repository to define API endpoints and OpenAPI documentation.
 
 #### Example:
 
@@ -61,8 +61,8 @@ export default UsersSchema;
 ```
 
 ```typescript
-// netlify-msf.config.ts
-import { Config } from 'netlify-msf';
+// simple-msf.config.ts
+import { Config } from 'simple-msf';
 import UsersSchema from './UsersSchema';
 
 const config: Config = {
@@ -97,23 +97,25 @@ const config: Config = {
 Run the following command to generate an `openapi.yaml` file at the root level or in the specified `outputDir`:
 
 ```sh
-netlify-msf openapi-gen
+simple-msf openapi-gen
 ```
 
-## API Handler
+## Netlify
+
+### API Handler
 
 The library exports a `handler` function that wraps Netlify functions with Zod-based request validation.
 
-### Usage Example
+#### Usage Example
 
 ```typescript
-import * as msf from 'netlify-msf';
+import * as msfNetlify from 'simple-msf/netlify';
 import { z } from 'zod';
 
 const querySchema = z.object({ id: z.string() });
 const bodySchema = z.object({ name: z.string() });
 
-export const handler = msf.handler({ querySchema, bodySchema })((request, event, context) => {
+export const handler = msfNetlify.handler({ querySchema, bodySchema })((request, event, context) => {
   return {
     message: `Hello, ${request.body.name}!`
   };
@@ -122,14 +124,14 @@ export const handler = msf.handler({ querySchema, bodySchema })((request, event,
 
 ## Error Handling
 
-`MsfError` is a custom error class for handling API errors gracefully.
+`SimpleMsfError` is a custom error class for handling API errors gracefully.
 
 ### Example:
 
 ```typescript
-import { MsfError } from 'netlify-msf';
+import { SimpleMsfError } from 'simple-msf';
 
-throw new MsfError(400, "Invalid request");
+throw new SimpleMsfError(400, "Invalid request");
 ```
 
 ## License

@@ -7,10 +7,8 @@ import openapiGen from '../commands/openapi-gen.js';
 const program = new Command();
 
 program
-	.name('netlify-msf')
-	.description(
-		'A lightweight framework for building serverless microservices with Netlify Functions.',
-	)
+	.name('simple-msf')
+	.description('A simple framework for building microservices.')
 	.version(version);
 
 program

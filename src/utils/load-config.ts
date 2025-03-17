@@ -4,16 +4,16 @@ import fs from 'node:fs/promises';
 import {build} from 'esbuild';
 import {type Config} from '../types.js';
 
-const configPath = path.join(process.cwd(), 'netlify-msf.config.ts');
+const configPath = path.join(process.cwd(), 'simple-msf.config.ts');
 
 const loadConfig = async () => {
 	try {
 		await fs.access(configPath);
 	} catch {
-		throw new Error('Missing "netlify-msf.config.ts" file.');
+		throw new Error('Missing "simple-msf.config.ts" file.');
 	}
 
-	const transpiledConfigPath = path.join(os.tmpdir(), 'netlify-msf.config.js');
+	const transpiledConfigPath = path.join(os.tmpdir(), 'simple-msf.config.js');
 
 	await build({
 		entryPoints: [configPath],
