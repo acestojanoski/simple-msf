@@ -1,10 +1,19 @@
+import {z} from 'zod';
 import {
 	type Handler,
 	type HandlerEvent,
 	type HandlerContext,
 	type HandlerResponse,
 } from '@netlify/functions';
-import {z} from 'zod';
+import MsfError from '../lib/msf-error.js';
+import {
+	logError,
+	logEvent,
+	logResponse,
+	type ErrorLogger,
+	type EventLogger,
+	type ResponseLogger,
+} from './logging.js';
 
 export type IQuerySchema = z.ZodSchema;
 export type IBodySchema = z.ZodSchema;
@@ -26,6 +35,8 @@ export type IExecute<
 	context: HandlerContext,
 ) => HandlerResponse | Promise<HandlerResponse>;
 
+export type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
 export type IHandlerOptions<
 	TQuerySchema extends IQuerySchema,
 	TBodySchema extends IBodySchema,
@@ -36,9 +47,14 @@ export type IHandlerOptions<
 		error: any,
 	) => HandlerResponse | Promise<HandlerResponse>;
 	loggingEnabled?: boolean;
-	eventLogger?: (event: HandlerEvent) => void;
-	responseLogger?: (response: HandlerResponse) => void;
-	errorLogger?: (error: any) => void;
+	eventLogger?: EventLogger;
+	responseLogger?: ResponseLogger;
+	errorLogger?: ErrorLogger;
+	beforeRequest?: (
+		event: HandlerEvent,
+		context: HandlerContext,
+	) => void | Promise<void> | HandlerResponse | Promise<HandlerResponse>;
+	methods?: Method[];
 };
 
 const handler =
@@ -50,16 +66,35 @@ const handler =
 		errorLogger,
 		eventLogger,
 		responseLogger,
+		beforeRequest,
+		methods,
 	}: IHandlerOptions<TQuerySchema, TBodySchema> = {}) =>
 	(execute: IExecute<TQuerySchema, TBodySchema>): Handler => {
 		return async (event, context) => {
 			try {
-				if (loggingEnabled && !eventLogger) {
-					console.log('event', JSON.stringify(event));
+				if (
+					methods &&
+					!methods.includes(event.httpMethod.toUpperCase() as Method)
+				) {
+					return {
+						statusCode: 405,
+						body: 'Method not allowed.',
+						headers: {
+							'Content-Type': 'text/plain',
+							Allow: methods.join(', '),
+						},
+					};
 				}
 
-				if (eventLogger) {
-					eventLogger(event);
+				logEvent(event, {loggingEnabled, eventLogger});
+
+				if (beforeRequest) {
+					const response = await beforeRequest(event, context);
+
+					if (response) {
+						logResponse(response, {loggingEnabled, responseLogger});
+						return response;
+					}
 				}
 
 				const request: IRequest<TQuerySchema, TBodySchema> = {
@@ -95,13 +130,7 @@ const handler =
 
 				const response = await execute(request, event, context);
 
-				if (loggingEnabled && !responseLogger) {
-					console.info('response', JSON.stringify(response));
-				}
-
-				if (responseLogger) {
-					responseLogger(response);
-				}
+				logResponse(response, {loggingEnabled, responseLogger});
 
 				return response;
 			} catch (error: any) {
@@ -109,19 +138,23 @@ const handler =
 					return customErrorHandler(error);
 				}
 
-				if (loggingEnabled && !errorLogger) {
-					console.error('error', error);
-				}
-
-				if (errorLogger) {
-					errorLogger(error);
-				}
+				logError(error, {loggingEnabled, errorLogger});
 
 				if (error instanceof z.ZodError) {
 					return {
 						statusCode: 400,
 						body: JSON.stringify({
 							message: 'Bad request.',
+							errors: error.errors,
+						}),
+					};
+				}
+
+				if (error instanceof MsfError) {
+					return {
+						statusCode: error.statusCode,
+						body: JSON.stringify({
+							message: error.message,
 							errors: error.errors,
 						}),
 					};
