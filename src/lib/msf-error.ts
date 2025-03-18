@@ -10,9 +10,15 @@ class MsfError extends Error {
 		errors?: ZodIssue[],
 	) {
 		super(message);
+		this.name = 'MsfError';
 		this.statusCode = statusCode;
 		this.errors = errors;
 	}
 }
+
+export const isMsfError = (error: any): error is MsfError =>
+	error?.name === 'MsfError' &&
+	typeof error?.statusCode === 'number' &&
+	typeof error?.message === 'string';
 
 export default MsfError;

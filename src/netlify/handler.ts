@@ -5,7 +5,7 @@ import {
 	type HandlerContext,
 	type HandlerResponse,
 } from '@netlify/functions';
-import MsfError from '../lib/msf-error.js';
+import {isMsfError} from '../lib/msf-error.js';
 import {
 	logError,
 	logEvent,
@@ -150,7 +150,7 @@ const handler =
 					};
 				}
 
-				if (error instanceof MsfError) {
+				if (isMsfError(error)) {
 					return {
 						statusCode: error.statusCode,
 						body: JSON.stringify({
