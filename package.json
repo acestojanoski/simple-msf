@@ -1,6 +1,6 @@
 {
 	"name": "simple-msf",
-	"version": "1.0.0-beta.4",
+	"version": "1.0.0-beta.5",
 	"description": "A simple framework for building microservices.",
 	"type": "module",
 	"main": "./dist/es/index.js",
