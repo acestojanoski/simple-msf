@@ -8,12 +8,54 @@ import {
 } from '@asteasolutions/zod-to-openapi';
 import * as yaml from 'js-yaml';
 import {z} from 'zod';
-import {type EndpointMethod} from '../types.js';
+import {type SecurityScheme, type EndpointMethod} from '../types.js';
 import loadConfig from '../utils/load-config.js';
 
 extendZodWithOpenApi(z);
 
 const fileName = 'openapi.yaml';
+
+const registerSecurityScheme = (
+	registry: OpenAPIRegistry,
+	securityScheme: SecurityScheme,
+) => {
+	registry.registerComponent('securitySchemes', securityScheme.schemeName, {
+		type: securityScheme.type,
+		...(securityScheme.type === 'apiKey' && {
+			in: securityScheme.in,
+			name: securityScheme.name,
+			description: securityScheme.description,
+		}),
+		...(securityScheme.type === 'http' && {
+			scheme: securityScheme.scheme,
+			bearerFormat: securityScheme.bearerFormat,
+			description: securityScheme.description,
+		}),
+		...(securityScheme.type === 'openIdConnect' && {
+			openIdConnectUrl: securityScheme.openIdConnectUrl,
+		}),
+	});
+};
+
+const buildSecurityObjects = (
+	securitySchemes?: SecurityScheme[],
+	whitelistedSchemes?: string[],
+) => {
+	if (!securitySchemes || !whitelistedSchemes) {
+		return undefined;
+	}
+
+	const filteredSchemes = securitySchemes.filter((securityScheme) =>
+		whitelistedSchemes.includes(securityScheme.schemeName),
+	);
+
+	return filteredSchemes.map((securityScheme) => ({
+		[securityScheme.schemeName]:
+			securityScheme.type === 'openIdConnect' && securityScheme.scopes
+				? securityScheme.scopes
+				: [],
+	}));
+};
 
 const execute = async () => {
 	const config = await loadConfig().then((module_) => module_.default);
@@ -44,7 +86,15 @@ const execute = async () => {
 
 	const {schemas} = config;
 	const {definition, outputDir} = config.openapi;
-	const {title, version, paths, description, servers} = definition;
+	const {
+		title,
+		version,
+		paths,
+		description,
+		servers,
+		securitySchemes,
+		security,
+	} = definition;
 
 	const registry = new OpenAPIRegistry();
 	const registeredSchemas: Record<keyof typeof schemas, z.ZodTypeAny> = {};
@@ -62,6 +112,7 @@ const execute = async () => {
 				summary: endpoint.summary,
 				request: {},
 				responses: {},
+				security: buildSecurityObjects(securitySchemes, endpoint.security),
 			};
 
 			if (endpoint.query && registeredSchemas[endpoint.query]) {
@@ -96,6 +147,12 @@ const execute = async () => {
 		}
 	}
 
+	if (securitySchemes) {
+		for (const securityScheme of securitySchemes) {
+			registerSecurityScheme(registry, securityScheme);
+		}
+	}
+
 	const generator = new OpenApiGeneratorV31(registry.definitions);
 
 	const openapi = generator.generateDocument({
@@ -106,6 +163,7 @@ const execute = async () => {
 			version,
 		},
 		servers,
+		security: buildSecurityObjects(securitySchemes, security),
 	});
 
 	const fileContent = yaml.dump(openapi);
